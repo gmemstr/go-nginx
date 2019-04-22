@@ -3,6 +3,7 @@ package provision
 import (
 	"bytes"
 	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -10,7 +11,11 @@ func TestProvisionServer(t *testing.T) {
 	locationPlain := CreateLocation("/plain", false, "", false)
 	locationProxy := CreateLocation("/proxy", true, "http://127.0.0.1:4343", false)
 	locationWebsocket := CreateLocation("/ws", true, "http://127.0.0.1:4343", true)
-	CreateServer("example.com", []string{locationPlain, locationProxy, locationWebsocket})
+	server := CreateServer("example.com", []string{locationPlain, locationProxy, locationWebsocket})
+	err := ioutil.WriteFile("test-config", server.Bytes(), 0644)
+	if err != nil {
+		t.Error("Unable to write out file.")
+	}
 
 	expected := []byte(`server {
     server_name example.com;
@@ -50,12 +55,15 @@ func TestProvisionServer(t *testing.T) {
 }
 `)
 
-	f, err := ioutil.ReadFile("configs/nginx-example.com")
+	f, err := ioutil.ReadFile("test-config")
 	if err != nil {
 		t.Error("File was not created or is not readable.")
 	}
 	if !bytes.Equal(f, expected) {
 		t.Error("Expected and actual config vary.")
 	}
-
+	err = os.Remove("test-config")
+	if err != nil {
+		t.Error("Unable to remove test file, please do so manually.")
+	}
 }

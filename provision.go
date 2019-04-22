@@ -2,7 +2,6 @@ package provision
 
 import (
 	"bytes"
-	"os"
 	"text/template"
 )
 
@@ -23,23 +22,22 @@ type Proxy struct {
 	IsWebsocket  bool
 }
 
-// Create server config and write to file.
-func CreateServer(name string, location []string) {
+// Create server config and return bytes buffer to be written to file.
+func CreateServer(name string, location []string) bytes.Buffer {
+	var result bytes.Buffer
 	tpl := template.Must(template.ParseFiles("templates/server.tpl"))
-	resultFile, err := os.Create("configs/nginx-" + name)
-	if err != nil {
-		panic(err)
-	}
 
 	server := Server{
 		ServerName:  name,
 		LogLocation: "/var/log/" + name + "-nginx.log",
 		Locations:   location,
 	}
-	err = tpl.Execute(resultFile, server)
+	err := tpl.Execute(&result, server)
 	if err != nil {
 		panic(err)
 	}
+
+	return result
 
 }
 
